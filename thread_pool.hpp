@@ -52,9 +52,12 @@ namespace thread_pool {
     } // namespace utility
 
 
+    /// TODO: use faster one
+    using Task = std::function<void()>;
+
     /// Policy struct for ThreadPool
     struct SimpleQueue {
-        std::queue<std::function<void()>> task_queue;
+        std::queue<Task> task_queue;
 
         const auto& front() const {
             return this->task_queue.front();
@@ -72,9 +75,9 @@ namespace thread_pool {
 
     struct PriorityTask {
         long priority;
-        std::function<void()> task;
+        Task task;
 
-        PriorityTask(long priority, std::function<void()>&& task) noexcept
+        PriorityTask(long priority, Task&& task) noexcept
             : priority(priority), task(std::move(task))
         {}
 
@@ -109,7 +112,7 @@ namespace thread_pool {
 
         /// helper methods
         void consume() {
-            std::function<void()> task;
+            Task task;
             while (this->pop(task)) {
                 task();
             }
@@ -121,7 +124,7 @@ namespace thread_pool {
             this->stop = true;
         }
 
-        bool pop(std::function<void()>& task) noexcept {
+        bool pop(Task& task) noexcept {
             // atomic operation
             std::unique_lock<std::mutex> lock(this->queue_mutex);
             this->condition.wait(lock, [this]{ return this->stop ||
